@@ -23,11 +23,12 @@ fn stable_wrap() {
     let mut check_wrap = |text: &_, wrap, start_width| {
         let line = ShapeLine::new(&mut font_system, text, &attrs, Shaping::Advanced);
 
-        let layout_unbounded = line.layout(font_size, start_width, wrap, Some(Align::Left), None);
+        let layout_unbounded =
+            line.layout(font_size, start_width, wrap, Some(Align::Left), None, None);
         let max_width = layout_unbounded.iter().map(|l| l.w).fold(0.0, f32::max);
         let new_limit = f32::min(start_width, max_width);
 
-        let layout_bounded = line.layout(font_size, new_limit, wrap, Some(Align::Left), None);
+        let layout_bounded = line.layout(font_size, new_limit, wrap, Some(Align::Left), None, None);
         let bounded_max_width = layout_bounded.iter().map(|l| l.w).fold(0.0, f32::max);
 
         // For debugging:
@@ -91,7 +92,14 @@ fn wrap_extra_line() {
     buffer.shape_until_scroll(false);
 
     let empty_lines = buffer.layout_runs().filter(|x| x.line_w == 0.).count();
-    let overflow_lines = buffer.layout_runs().filter(|x| x.line_w > 50.).count();
+    let overflow_lines = buffer
+        .layout_runs()
+        .filter(|x| x.line_w > 50.)
+        .map(|line| {
+            println!("{}", line.text);
+            line
+        })
+        .count();
 
     assert_eq!(empty_lines, 1);
     assert_eq!(overflow_lines, 4);
