@@ -1239,7 +1239,10 @@ impl ShapeLine {
 
                         // We're on the first line.
                         if visual_lines.len() == 0 && wrap == Wrap::WordOrGlyph {
-                            println!("first line, indent {:?}, currently using {:?} of {:?} pixels", first_line_indent, current_visual_line.w, line_width);
+                            println!(
+                                "first line, indent {:?}, currently using {:?} of {:?} pixels",
+                                first_line_indent, current_visual_line.w, line_width
+                            );
                         }
 
                         if wrap == Wrap::Glyph
@@ -1460,7 +1463,7 @@ impl ShapeLine {
 
             let mut process_range = |range: Range<usize>| {
                 for &(span_index, (starting_word, starting_glyph), (ending_word, ending_glyph)) in
-                visual_line.ranges[range.clone()].iter()
+                    visual_line.ranges[range.clone()].iter()
                 {
                     let span = &self.spans[span_index];
                     // If ending_glyph is not 0 we need to include glyphs from the ending_word
@@ -1481,25 +1484,25 @@ impl ShapeLine {
                                 glyph.font_monospace_em_width,
                             ) {
                                 (Some(match_em_width), Some(glyph_em_width))
-                                if glyph_em_width != match_em_width =>
-                                    {
-                                        let glyph_to_match_factor = glyph_em_width / match_em_width;
-                                        let glyph_font_size = math::roundf(glyph_to_match_factor)
-                                            .max(1.0)
-                                            / glyph_to_match_factor
-                                            * font_size;
-                                        log::trace!("Adjusted glyph font size ({font_size} => {glyph_font_size})");
-                                        glyph_font_size
-                                    }
+                                    if glyph_em_width != match_em_width =>
+                                {
+                                    let glyph_to_match_factor = glyph_em_width / match_em_width;
+                                    let glyph_font_size = math::roundf(glyph_to_match_factor)
+                                        .max(1.0)
+                                        / glyph_to_match_factor
+                                        * font_size;
+                                    log::trace!("Adjusted glyph font size ({font_size} => {glyph_font_size})");
+                                    glyph_font_size
+                                }
                                 _ => font_size,
                             };
 
                             let x_advance = glyph_font_size * glyph.x_advance
                                 + if word.blank {
-                                justification_expansion
-                            } else {
-                                0.0
-                            };
+                                    justification_expansion
+                                } else {
+                                    0.0
+                                };
                             if self.rtl {
                                 x -= x_advance;
                             }
