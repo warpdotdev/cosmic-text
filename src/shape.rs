@@ -987,7 +987,7 @@ impl ShapeLine {
         line_width: f32,
         wrap: Wrap,
         align: Option<Align>,
-        first_line_indent: Option<f32>,
+        first_line_head_indent: Option<f32>,
         layout_lines: &mut Vec<LayoutLine>,
         match_mono_width: Option<f32>,
     ) {
@@ -1030,7 +1030,7 @@ impl ShapeLine {
         // let mut current_visual_line: Vec<VlRange> = Vec::with_capacity(1);
         // TODO(lucie): this is the first visual line.
         // We'd probably want to add the indent to the line before starting to add words to it.
-        let first_line_indent = first_line_indent.unwrap_or_default().min(line_width);
+        let first_line_indent = first_line_head_indent.unwrap_or_default().min(line_width);
         let mut current_visual_line = VisualLine {
             w: first_line_indent,
             ..Default::default()
@@ -1093,7 +1093,7 @@ impl ShapeLine {
                             // Include one blank word over the width limit since it won't be
                             // counted in the final width
                             || (word.blank
-                                && (current_visual_line.w + word_range_width) <= line_width)
+                            && (current_visual_line.w + word_range_width) <= line_width)
                         {
                             // fits
                             if word.blank {
@@ -1225,7 +1225,7 @@ impl ShapeLine {
                             // Include one blank word over the width limit since it won't be
                             // counted in the final width.
                             || (word.blank
-                                && (current_visual_line.w + word_range_width) <= line_width)
+                            && (current_visual_line.w + word_range_width) <= line_width)
                         {
                             println!("fits on current line");
                             // fits
@@ -1237,11 +1237,20 @@ impl ShapeLine {
                             continue;
                         }
 
+                        // We're on the first line.
+                        if visual_lines.len() == 0 && wrap == Wrap::WordOrGlyph {
+                            println!("first line, indent {:?}, currently using {:?} of {:?} pixels", first_line_indent, current_visual_line.w, line_width);
+                        }
+
                         if wrap == Wrap::Glyph
                             // Make sure that the word is able to fit on it's own line, if not, fall back to Glyph wrapping.
                             || (wrap == Wrap::WordOrGlyph && word_width > line_width)
+                            // If we're on the first line
+                            || (wrap == Wrap::WordOrGlyph && visual_lines.len() == 0 &&
+                                // and we can't fit the rest of this word on the line
+                                (current_visual_line.w + word_width > line_width))
                         {
-                            println!("adding word {} to the line", i);
+                            println!("adding existing range {} to the line", i);
                             // Commit the current line so that the word starts on the next line.
                             if word_range_width > 0.
                                 && wrap == Wrap::WordOrGlyph
@@ -1266,8 +1275,10 @@ impl ShapeLine {
                                 fitting_start = (i, 0);
                             }
 
+                            println!("Going glyph-by-glyph");
                             for (glyph_i, glyph) in word.glyphs.iter().enumerate() {
                                 let glyph_width = font_size * glyph.x_advance;
+                                println!("Glyph {glyph_i}, width {glyph_width}");
                                 if current_visual_line.w + (word_range_width + glyph_width)
                                     <= line_width
                                 {
@@ -1449,7 +1460,7 @@ impl ShapeLine {
 
             let mut process_range = |range: Range<usize>| {
                 for &(span_index, (starting_word, starting_glyph), (ending_word, ending_glyph)) in
-                    visual_line.ranges[range.clone()].iter()
+                visual_line.ranges[range.clone()].iter()
                 {
                     let span = &self.spans[span_index];
                     // If ending_glyph is not 0 we need to include glyphs from the ending_word
@@ -1470,25 +1481,25 @@ impl ShapeLine {
                                 glyph.font_monospace_em_width,
                             ) {
                                 (Some(match_em_width), Some(glyph_em_width))
-                                    if glyph_em_width != match_em_width =>
-                                {
-                                    let glyph_to_match_factor = glyph_em_width / match_em_width;
-                                    let glyph_font_size = math::roundf(glyph_to_match_factor)
-                                        .max(1.0)
-                                        / glyph_to_match_factor
-                                        * font_size;
-                                    log::trace!("Adjusted glyph font size ({font_size} => {glyph_font_size})");
-                                    glyph_font_size
-                                }
+                                if glyph_em_width != match_em_width =>
+                                    {
+                                        let glyph_to_match_factor = glyph_em_width / match_em_width;
+                                        let glyph_font_size = math::roundf(glyph_to_match_factor)
+                                            .max(1.0)
+                                            / glyph_to_match_factor
+                                            * font_size;
+                                        log::trace!("Adjusted glyph font size ({font_size} => {glyph_font_size})");
+                                        glyph_font_size
+                                    }
                                 _ => font_size,
                             };
 
                             let x_advance = glyph_font_size * glyph.x_advance
                                 + if word.blank {
-                                    justification_expansion
-                                } else {
-                                    0.0
-                                };
+                                justification_expansion
+                            } else {
+                                0.0
+                            };
                             if self.rtl {
                                 x -= x_advance;
                             }
