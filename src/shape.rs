@@ -1008,20 +1008,13 @@ impl ShapeLine {
             width: f32,
             number_of_blanks: u32,
         ) {
-            println!(
-                " - adding span chunk [{:?}, {:?}] to visual line",
-                start, end
-            );
             if end == start {
-                println!(" --- start matches end, cancelled");
                 return;
             }
 
-            println!(" --- visual line width before: {:?}", vl.w);
             vl.ranges.push((span_index, start, end));
             vl.w += width;
             vl.spaces += number_of_blanks;
-            println!(" --- visual line width after: {:?}", vl.w);
         }
 
         // This would keep the maximum number of spans that would fit on a visual line
@@ -1035,9 +1028,7 @@ impl ShapeLine {
             w: first_line_indent,
             ..Default::default()
         };
-        println!("first line indent: {:#?}", first_line_indent);
 
-        println!("wrapping style: {:#?}", wrap);
         if wrap == Wrap::None {
             for (span_index, span) in self.spans.iter().enumerate() {
                 let mut word_range_width = 0.;
@@ -1057,22 +1048,10 @@ impl ShapeLine {
                     word_range_width,
                     number_of_blanks,
                 );
-                println!("added span '{:?}' to visual line", span.words);
             }
         } else {
             for (span_index, span) in self.spans.iter().enumerate() {
-                println!(
-                    "span index: {span_index}, current_visual_line.w = {:?}",
-                    current_visual_line.w
-                );
                 let mut word_range_width = 0.;
-                /*
-                let mut word_range_width = if span_index == 0 {
-                    first_line_indent
-                } else {
-                    0.
-                };
-                */
                 let mut width_before_last_blank = 0.;
                 let mut number_of_blanks: u32 = 0;
 
@@ -1080,7 +1059,6 @@ impl ShapeLine {
                 // TODO(lucie): account for indent here
                 if self.rtl != span.level.is_rtl() {
                     // incongruent directions
-                    println!("incongruent directions");
                     let mut fitting_start = (span.words.len(), 0);
                     for (i, word) in span.words.iter().enumerate().rev() {
                         let word_width = font_size * word.x_advance;
@@ -1120,7 +1098,6 @@ impl ShapeLine {
                                     number_of_blanks,
                                 );
 
-                                println!("RESET VISUAL LINE");
                                 visual_lines.push(current_visual_line);
                                 current_visual_line = VisualLine::default();
 
@@ -1146,7 +1123,6 @@ impl ShapeLine {
                                         word_range_width,
                                         number_of_blanks,
                                     );
-                                    println!("RESET VISUAL LINE");
                                     visual_lines.push(current_visual_line);
                                     current_visual_line = VisualLine::default();
 
@@ -1187,7 +1163,6 @@ impl ShapeLine {
                                     );
                                 }
 
-                                println!("RESET VISUAL LINE");
                                 visual_lines.push(current_visual_line);
                                 current_visual_line = VisualLine::default();
                                 number_of_blanks = 0;
@@ -1212,12 +1187,9 @@ impl ShapeLine {
                     );
                 } else {
                     // congruent direction
-                    println!("congruent direction");
                     let mut fitting_start = (0, 0);
                     for (i, word) in span.words.iter().enumerate() {
                         let word_width = font_size * word.x_advance;
-                        println!("\nword {:?} width: {}", i, word_width);
-                        println!("word_range_width before: {:?}", word_range_width);
 
                         // Line still has space for the whole word
                         if current_visual_line.w + (word_range_width + word_width)
@@ -1227,7 +1199,6 @@ impl ShapeLine {
                             || (word.blank
                             && (current_visual_line.w + word_range_width) <= line_width)
                         {
-                            println!("fits on current line");
                             // fits
                             if word.blank {
                                 number_of_blanks += 1;
@@ -1235,14 +1206,6 @@ impl ShapeLine {
                             }
                             word_range_width += word_width;
                             continue;
-                        }
-
-                        // We're on the first line.
-                        if visual_lines.len() == 0 && wrap == Wrap::WordOrGlyph {
-                            println!(
-                                "first line, indent {:?}, currently using {:?} of {:?} pixels",
-                                first_line_indent, current_visual_line.w, line_width
-                            );
                         }
 
                         if wrap == Wrap::Glyph
@@ -1253,7 +1216,6 @@ impl ShapeLine {
                             // and we can't fit the rest of this word on the line
                             (current_visual_line.w + word_width > line_width))
                         {
-                            println!("adding existing range {} to the line", i);
                             // Commit the current line so that the word starts on the next line.
                             if word_range_width > 0.
                                 && wrap == Wrap::WordOrGlyph
@@ -1268,7 +1230,6 @@ impl ShapeLine {
                                     number_of_blanks,
                                 );
 
-                                println!("RESET VISUAL LINE");
                                 visual_lines.push(current_visual_line);
                                 current_visual_line = VisualLine::default();
 
@@ -1278,10 +1239,8 @@ impl ShapeLine {
                                 fitting_start = (i, 0);
                             }
 
-                            println!("Going glyph-by-glyph");
                             for (glyph_i, glyph) in word.glyphs.iter().enumerate() {
                                 let glyph_width = font_size * glyph.x_advance;
-                                println!("Glyph {glyph_i}, width {glyph_width}");
                                 if current_visual_line.w + (word_range_width + glyph_width)
                                     <= line_width
                                 {
@@ -1296,7 +1255,6 @@ impl ShapeLine {
                                         word_range_width,
                                         number_of_blanks,
                                     );
-                                    println!("RESET VISUAL LINE");
                                     visual_lines.push(current_visual_line);
                                     current_visual_line = VisualLine::default();
 
@@ -1307,20 +1265,13 @@ impl ShapeLine {
                             }
                         } else {
                             // Wrap::Word, Wrap::WordOrGlyph
-                            println!("Wrap::Word and Wrap::WordOrGlyph");
-
                             // If we had a previous range, commit that line before the next word.
                             if word_range_width > 0. {
                                 // Current word causing a wrap is not whitespace, so we ignore the
                                 // previous word if it's a whitespace.
                                 let trailing_blank = i > 0 && span.words[i - 1].blank;
 
-                                println!(
-                                    "word range width = {:?}, is_trailing_blank = {:?}",
-                                    word_range_width, trailing_blank
-                                );
                                 if trailing_blank {
-                                    println!("Trailing blank case");
                                     number_of_blanks = number_of_blanks.saturating_sub(1);
                                     add_to_visual_line(
                                         &mut current_visual_line,
@@ -1331,7 +1282,6 @@ impl ShapeLine {
                                         number_of_blanks,
                                     );
                                 } else {
-                                    println!("'Add anyway' case");
                                     // Add the word anyway?
                                     add_to_visual_line(
                                         &mut current_visual_line,
@@ -1343,13 +1293,10 @@ impl ShapeLine {
                                     );
                                 }
 
-                                println!("RESET VISUAL LINE");
                                 visual_lines.push(current_visual_line);
                                 current_visual_line = VisualLine::default();
                                 number_of_blanks = 0;
                             }
-
-                            println!("word_range_width intermediate: {:?}", word_range_width);
 
                             if word.blank {
                                 word_range_width = 0.;
@@ -1359,13 +1306,8 @@ impl ShapeLine {
                                 fitting_start = (i, 0);
                             }
                         }
-                        println!("word_range_width after: {:?}", word_range_width);
                     }
-                    println!(
-                        "adding rest of span {span_index} ({:?}..{:?}) to line",
-                        fitting_start,
-                        (span.words.len(), 0)
-                    );
+
                     add_to_visual_line(
                         &mut current_visual_line,
                         span_index,
@@ -1381,9 +1323,6 @@ impl ShapeLine {
         if !current_visual_line.ranges.is_empty() {
             visual_lines.push(current_visual_line);
         }
-
-        println!("\nAssigned glyphs to {:?} lines.", visual_lines.len());
-        println!("\nCalculation step done, starting layout\n");
 
         // Create the LayoutLines using the ranges inside visual lines
         let align = align.unwrap_or({
@@ -1407,7 +1346,6 @@ impl ShapeLine {
                     max_descent: 0.0,
                     glyphs: Default::default(),
                 });
-                println!("skipping empty visual range");
                 continue;
             }
             let new_order = self.reorder(&visual_line.ranges);
