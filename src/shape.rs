@@ -1250,8 +1250,8 @@ impl ShapeLine {
                             || (wrap == Wrap::WordOrGlyph && word_width > line_width)
                             // If we're on the first line
                             || (wrap == Wrap::WordOrGlyph && visual_lines.len() == 0 &&
-                                // and we can't fit the rest of this word on the line
-                                (current_visual_line.w + word_width > line_width))
+                            // and we can't fit the rest of this word on the line
+                            (current_visual_line.w + word_width > line_width))
                         {
                             println!("adding existing range {} to the line", i);
                             // Commit the current line so that the word starts on the next line.
@@ -1417,8 +1417,7 @@ impl ShapeLine {
             let mut max_ascent: f32 = 0.;
             let mut max_descent: f32 = 0.;
 
-            // TODO(lucie): Account for indent below
-            let indent_correction = if index == 0 { first_line_indent } else { 0.0 };
+            let indent_correction = if index == 0 { first_line_indent } else { 0. };
             let alignment_correction = match (align, self.rtl) {
                 (Align::Left, true) => line_width - visual_line.w,
                 (Align::Left, false) => 0.,
@@ -1451,12 +1450,17 @@ impl ShapeLine {
             //  still be expanded)
 
             // Amount of extra width added to each blank space within a line.
+            let current_line_width = if index == 0 {
+                line_width - first_line_indent
+            } else {
+                line_width
+            };
             let justification_expansion = if matches!(align, Align::Justified)
                 && visual_line.spaces > 0
                 // Don't justify the last line in a paragraph.
                 && index != number_of_visual_lines - 1
             {
-                (line_width - visual_line.w) / visual_line.spaces as f32
+                (current_line_width - visual_line.w) / visual_line.spaces as f32
             } else {
                 0.
             };
