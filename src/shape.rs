@@ -1350,7 +1350,6 @@ impl ShapeLine {
             let mut max_ascent: f32 = 0.;
             let mut max_descent: f32 = 0.;
 
-            let indent_correction = if index == 0 { first_line_indent } else { 0. };
             let alignment_correction = match (align, self.rtl) {
                 (Align::Left, true) => line_width - visual_line.w,
                 (Align::Left, false) => 0.,
@@ -1360,12 +1359,11 @@ impl ShapeLine {
                 (Align::End, _) => line_width - visual_line.w,
                 (Align::Justified, _) => 0.,
             };
-            let total_correction = indent_correction + alignment_correction;
 
             if self.rtl {
-                x -= total_correction;
+                x -= alignment_correction;
             } else {
-                x += total_correction;
+                x += alignment_correction;
             }
 
             // TODO: Only certain `is_whitespace` chars are typically expanded but this is what is
@@ -1382,12 +1380,12 @@ impl ShapeLine {
             // (also some spaces aren't followed by potential linebreaks but they could
             //  still be expanded)
 
-            // Amount of extra width added to each blank space within a line.
             let current_line_width = if index == 0 {
                 line_width - first_line_indent
             } else {
                 line_width
             };
+            // Amount of extra width added to each blank space within a line.
             let justification_expansion = if matches!(align, Align::Justified)
                 && visual_line.spaces > 0
                 // Don't justify the last line in a paragraph.
@@ -1467,14 +1465,20 @@ impl ShapeLine {
                 }
             }
 
-            layout_lines.push(LayoutLine {
-                w: if align != Align::Justified {
-                    visual_line.w
-                } else if self.rtl {
-                    start_x - x
+            let current_line_width = if align != Align::Justified {
+                if index == 0 {
+                    visual_line.w - first_line_indent
                 } else {
-                    x
-                },
+                    visual_line.w
+                }
+            } else if self.rtl {
+                start_x - x
+            } else {
+                x
+            };
+            println!("current_line_width {current_line_width}");
+            layout_lines.push(LayoutLine {
+                w: current_line_width,
                 max_ascent: max_ascent * font_size,
                 max_descent: max_descent * font_size,
                 glyphs,
