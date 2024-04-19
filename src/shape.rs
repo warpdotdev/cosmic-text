@@ -1017,11 +1017,12 @@ impl ShapeLine {
             vl.spaces += number_of_blanks;
         }
 
+        let first_line_indent = first_line_head_indent.unwrap_or_default().min(line_width);
+
         // This would keep the maximum number of spans that would fit on a visual line
         // If one span is too large, this variable will hold the range of words inside that span
         // that fits on a line.
         // let mut current_visual_line: Vec<VlRange> = Vec::with_capacity(1);
-        let first_line_indent = first_line_head_indent.unwrap_or_default().min(line_width);
         let mut current_visual_line = VisualLine {
             w: first_line_indent,
             ..Default::default()
