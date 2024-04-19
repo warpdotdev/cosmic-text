@@ -1021,8 +1021,6 @@ impl ShapeLine {
         // If one span is too large, this variable will hold the range of words inside that span
         // that fits on a line.
         // let mut current_visual_line: Vec<VlRange> = Vec::with_capacity(1);
-        // TODO(lucie): this is the first visual line.
-        // We'd probably want to add the indent to the line before starting to add words to it.
         let first_line_indent = first_line_head_indent.unwrap_or_default().min(line_width);
         let mut current_visual_line = VisualLine {
             w: first_line_indent,
@@ -1056,7 +1054,6 @@ impl ShapeLine {
                 let mut number_of_blanks: u32 = 0;
 
                 // Create the word ranges that fits in a visual line
-                // TODO(lucie): account for indent here
                 if self.rtl != span.level.is_rtl() {
                     // incongruent directions
                     let mut fitting_start = (span.words.len(), 0);
@@ -1282,7 +1279,6 @@ impl ShapeLine {
                                         number_of_blanks,
                                     );
                                 } else {
-                                    // Add the word anyway?
                                     add_to_visual_line(
                                         &mut current_visual_line,
                                         span_index,
@@ -1333,11 +1329,9 @@ impl ShapeLine {
             }
         });
 
-        // TODO(lucie): here's the line Advait recommended as a starting point
         let start_x = if self.rtl { line_width } else { 0.0 };
 
         let number_of_visual_lines = visual_lines.len();
-        // for each visual line
         for (index, visual_line) in visual_lines.iter().enumerate() {
             if visual_line.ranges.is_empty() {
                 layout_lines.push(LayoutLine {
