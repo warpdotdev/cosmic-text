@@ -1344,6 +1344,7 @@ impl ShapeLine {
                 });
                 continue;
             }
+            let first_line = index == 0;
             let new_order = self.reorder(&visual_line.ranges);
             let mut glyphs = Vec::with_capacity(1);
             let mut x = start_x;
@@ -1380,7 +1381,7 @@ impl ShapeLine {
             // (also some spaces aren't followed by potential linebreaks but they could
             //  still be expanded)
 
-            let current_line_width = if index == 0 {
+            let current_line_width = if first_line {
                 line_width - first_line_indent
             } else {
                 line_width
@@ -1466,15 +1467,13 @@ impl ShapeLine {
             }
 
             let current_line_width = if align != Align::Justified {
-                if index == 0 {
-                    visual_line.w - first_line_indent
-                } else {
-                    visual_line.w
-                }
-            } else if self.rtl {
-                start_x - x
+                visual_line.w - if first_line { first_line_indent } else { 0. }
             } else {
-                x
+                if self.rtl {
+                    start_x - x
+                } else {
+                    x
+                }
             };
             layout_lines.push(LayoutLine {
                 w: current_line_width,
