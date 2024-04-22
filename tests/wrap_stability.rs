@@ -92,14 +92,7 @@ fn wrap_extra_line() {
     buffer.shape_until_scroll(false);
 
     let empty_lines = buffer.layout_runs().filter(|x| x.line_w == 0.).count();
-    let overflow_lines = buffer
-        .layout_runs()
-        .filter(|x| x.line_w > 50.)
-        .map(|line| {
-            println!("{}", line.text);
-            line
-        })
-        .count();
+    let overflow_lines = buffer.layout_runs().filter(|x| x.line_w > 50.).count();
 
     assert_eq!(empty_lines, 1);
     assert_eq!(overflow_lines, 4);

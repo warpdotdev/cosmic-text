@@ -1304,7 +1304,6 @@ impl ShapeLine {
                             }
                         }
                     }
-
                     add_to_visual_line(
                         &mut current_visual_line,
                         span_index,
@@ -1349,7 +1348,6 @@ impl ShapeLine {
             let mut y = 0.;
             let mut max_ascent: f32 = 0.;
             let mut max_descent: f32 = 0.;
-
             let alignment_correction = match (align, self.rtl) {
                 (Align::Left, true) => line_width - visual_line.w,
                 (Align::Left, false) => 0.,
@@ -1476,7 +1474,6 @@ impl ShapeLine {
             } else {
                 x
             };
-            println!("current_line_width {current_line_width}");
             layout_lines.push(LayoutLine {
                 w: current_line_width,
                 max_ascent: max_ascent * font_size,
