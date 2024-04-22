@@ -1333,6 +1333,8 @@ impl ShapeLine {
 
         let number_of_visual_lines = visual_lines.len();
         for (index, visual_line) in visual_lines.iter().enumerate() {
+            // This empty line check accounts for the case in which a word can't fit on the first
+            // line with an indent, but could otherwise fit on a full line by itself.
             if visual_line.ranges.is_empty() {
                 layout_lines.push(LayoutLine {
                     w: 0.0,
