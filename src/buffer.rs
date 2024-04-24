@@ -228,6 +228,7 @@ pub struct Buffer {
     metrics: Metrics,
     width: f32,
     height: f32,
+    first_line_indent: Option<f32>,
     scroll: Scroll,
     /// True if a redraw is requires. Set to false after processing
     redraw: bool,
@@ -245,6 +246,7 @@ impl Clone for Buffer {
             metrics: self.metrics,
             width: self.width,
             height: self.height,
+            first_line_indent: self.first_line_indent,
             scroll: self.scroll,
             redraw: self.redraw,
             wrap: self.wrap,
@@ -273,6 +275,7 @@ impl Buffer {
             metrics,
             width: 0.0,
             height: 0.0,
+            first_line_indent: None,
             scroll: Scroll::default(),
             redraw: false,
             wrap: Wrap::WordOrGlyph,
@@ -315,6 +318,7 @@ impl Buffer {
                     font_system,
                     self.metrics.font_size,
                     self.width,
+                    self.first_line_indent,
                     self.wrap,
                     self.monospace_width,
                 );
@@ -495,6 +499,7 @@ impl Buffer {
             font_system,
             self.metrics.font_size,
             self.width,
+            self.first_line_indent,
             self.wrap,
             self.monospace_width,
         ))
