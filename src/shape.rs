@@ -1024,6 +1024,7 @@ impl ShapeLine {
         // that fits on a line.
         // let mut current_visual_line: Vec<VlRange> = Vec::with_capacity(1);
         let mut current_visual_line = VisualLine {
+            // The first line gets initialized with the head indent.
             w: first_line_indent,
             ..Default::default()
         };
