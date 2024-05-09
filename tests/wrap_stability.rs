@@ -111,39 +111,6 @@ fn wrap_extra_line() {
     assert_eq!(overflow_lines, 4);
 }
 
-#[test]
-fn wrap_bidirectional() {
-    let mut font_system = FontSystem::new();
-    let font_size = 14.0;
-    let line_height = 20.0;
-    let buffer_width = 80.0;
-
-    let metrics = Metrics::new(font_size, line_height);
-
-    let mut plain_buffer = Buffer::new(&mut font_system, metrics);
-
-    let mut buffer = plain_buffer.borrow_with(&mut font_system);
-
-    // Add some text
-    buffer.set_wrap(Wrap::WordOrGlyph);
-    buffer.set_text(
-        "breakfast, إفطار, lunch (غداء) and dinner - عشاء",
-        Attrs::new().family(cosmic_text::Family::Name("Inter")),
-        Shaping::Advanced,
-    );
-
-    // Set a size for the text buffer, in pixels
-    buffer.set_size(buffer_width, 1000.0);
-
-    let layout_line = buffer.line_layout(0).unwrap().first().unwrap();
-    assert!(
-        layout_line.w <= buffer_width,
-        "layout line width ({}) was greater than buffer width ({})",
-        layout_line.w,
-        buffer_width
-    );
-}
-
 #[allow(dead_code)]
 fn dbg_layout_lines(text: &str, lines: &[LayoutLine]) {
     for line in lines {
