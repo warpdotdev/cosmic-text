@@ -1079,20 +1079,24 @@ impl ShapeLine {
                             }
                             word_range_width += word_width;
                             continue;
-                        } else if wrap == Wrap::Glyph
+                        }
+
+                        let on_first_line = visual_lines.is_empty();
+                        let word_fits_on_current_line =
+                            current_visual_line.w + word_width <= line_width;
+
+                        if wrap == Wrap::Glyph
                             // Make sure that the word is able to fit on its own line, if not, fall back to Glyph wrapping.
                             || (wrap == Wrap::WordOrGlyph && word_width > line_width)
-                            // If we're on the first line
-                            || (wrap == Wrap::WordOrGlyph && visual_lines.len() == 0 &&
-                            // and we can't fit this word on the first line on its own
-                            current_visual_line.w + word_width > line_width)
+                            // If we're on the first line and can't fit the word on its own
+                            || (wrap == Wrap::WordOrGlyph && on_first_line && !word_fits_on_current_line)
                         {
                             // Commit the current line so that the word starts on the next line.
                             if word_range_width > 0.
                                 && ((wrap == Wrap::WordOrGlyph && word_width > line_width)
                                     || (wrap == Wrap::WordOrGlyph
-                                        && visual_lines.len() == 0
-                                        && current_visual_line.w + word_width > line_width))
+                                        && on_first_line
+                                        && !word_fits_on_current_line))
                             {
                                 add_to_visual_line(
                                     &mut current_visual_line,
@@ -1213,20 +1217,22 @@ impl ShapeLine {
                             continue;
                         }
 
+                        let on_first_line = visual_lines.is_empty();
+                        let word_fits_on_current_line =
+                            current_visual_line.w + word_width <= line_width;
+
                         if wrap == Wrap::Glyph
                             // Make sure that the word is able to fit on it's own line, if not, fall back to Glyph wrapping.
                             || (wrap == Wrap::WordOrGlyph && word_width > line_width)
-                            // If we're on the first line
-                            || (wrap == Wrap::WordOrGlyph && visual_lines.len() == 0 &&
-                            // and we can't fit the rest of this word on the current line
-                            current_visual_line.w + word_width > line_width)
+                            // If we're on the first line and can't fit the word on its own
+                            || (wrap == Wrap::WordOrGlyph && on_first_line && !word_fits_on_current_line)
                         {
                             // Commit the current line so that the word starts on the next line.
                             if word_range_width > 0.
                                 && ((wrap == Wrap::WordOrGlyph && word_width > line_width)
                                     || (wrap == Wrap::WordOrGlyph
-                                        && visual_lines.len() == 0
-                                        && current_visual_line.w + word_width > line_width))
+                                        && on_first_line
+                                        && !word_fits_on_current_line))
                             {
                                 add_to_visual_line(
                                     &mut current_visual_line,
