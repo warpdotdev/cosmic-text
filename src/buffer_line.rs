@@ -235,6 +235,7 @@ impl BufferLine {
         font_system: &mut FontSystem,
         font_size: f32,
         width_opt: Option<f32>,
+        first_line_indent: Option<f32>,
         wrap: Wrap,
         match_mono_width: Option<f32>,
         tab_width: u16,
@@ -252,6 +253,7 @@ impl BufferLine {
                 width_opt,
                 wrap,
                 align,
+                first_line_indent,
                 &mut layout,
                 match_mono_width,
             );
