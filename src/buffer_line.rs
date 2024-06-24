@@ -225,7 +225,7 @@ impl BufferLine {
             );
             self.layout_opt = Some(layout);
         }
-        self.layout_opt.as_ref().expect("layout not found")
+        self.layout_opt.as_ref().expect("layout not found here")
     }
 
     /// Get line layout cache
