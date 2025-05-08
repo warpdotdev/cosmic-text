@@ -1563,8 +1563,8 @@ impl ShapeLine {
             };
             layout_lines.push(LayoutLine {
                 w: current_line_width,
-                max_ascent: max_ascent * font_size,
-                max_descent: max_descent * font_size,
+                max_ascent,
+                max_descent,
                 line_height_opt,
                 glyphs,
             });
