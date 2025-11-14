@@ -1086,6 +1086,7 @@ impl ShapeLine {
         width_opt: Option<f32>,
         wrap: Wrap,
         align: Option<Align>,
+        first_line_indent: Option<f32>,
         match_mono_width: Option<f32>,
     ) -> Vec<LayoutLine> {
         let mut lines = Vec::with_capacity(1);
@@ -1095,6 +1096,7 @@ impl ShapeLine {
             width_opt,
             wrap,
             align,
+            first_line_indent,
             &mut lines,
             match_mono_width,
         );
@@ -1108,6 +1110,7 @@ impl ShapeLine {
         width_opt: Option<f32>,
         wrap: Wrap,
         align: Option<Align>,
+        first_line_head_indent: Option<f32>,
         layout_lines: &mut Vec<LayoutLine>,
         match_mono_width: Option<f32>,
     ) {
@@ -1147,11 +1150,19 @@ impl ShapeLine {
             vl.spaces += number_of_blanks;
         }
 
+        let first_line_indent = first_line_head_indent
+            .unwrap_or_default()
+            .min(width_opt.unwrap_or(f32::INFINITY));
+
         // This would keep the maximum number of spans that would fit on a visual line
         // If one span is too large, this variable will hold the range of words inside that span
         // that fits on a line.
         // let mut current_visual_line: Vec<VlRange> = Vec::with_capacity(1);
-        let mut current_visual_line = cached_visual_lines.pop().unwrap_or_default();
+        let mut current_visual_line = cached_visual_lines.pop().unwrap_or_else(|| VisualLine {
+            // The first line gets initialized with the head indent.
+            w: first_line_indent,
+            ..Default::default()
+        });
 
         if wrap == Wrap::None {
             for (span_index, span) in self.spans.iter().enumerate() {
@@ -1203,14 +1214,25 @@ impl ShapeLine {
                             }
                             word_range_width += word_width;
                             continue;
-                        } else if wrap == Wrap::Glyph
-                            // Make sure that the word is able to fit on it's own line, if not, fall back to Glyph wrapping.
+                        }
+
+                        let on_first_line = visual_lines.is_empty();
+                        let word_fits_on_current_line = current_visual_line.w + word_width
+                            <= width_opt.unwrap_or(f32::INFINITY);
+
+                        if wrap == Wrap::Glyph
+                            // Make sure that the word is able to fit on its own line, if not, fall back to Glyph wrapping.
                             || (wrap == Wrap::WordOrGlyph && word_width > width_opt.unwrap_or(f32::INFINITY))
+                            // If we're on the first line and can't fit the word on its own
+                            || (wrap == Wrap::WordOrGlyph && on_first_line && !word_fits_on_current_line)
                         {
                             // Commit the current line so that the word starts on the next line.
                             if word_range_width > 0.
-                                && wrap == Wrap::WordOrGlyph
-                                && word_width > width_opt.unwrap_or(f32::INFINITY)
+                                && ((wrap == Wrap::WordOrGlyph
+                                    && word_width > width_opt.unwrap_or(f32::INFINITY))
+                                    || (wrap == Wrap::WordOrGlyph
+                                        && on_first_line
+                                        && !word_fits_on_current_line))
                             {
                                 add_to_visual_line(
                                     &mut current_visual_line,
@@ -1329,14 +1351,25 @@ impl ShapeLine {
                             }
                             word_range_width += word_width;
                             continue;
-                        } else if wrap == Wrap::Glyph
+                        }
+
+                        let on_first_line = visual_lines.is_empty();
+                        let word_fits_on_current_line = current_visual_line.w + word_width
+                            <= width_opt.unwrap_or(f32::INFINITY);
+
+                        if wrap == Wrap::Glyph
                             // Make sure that the word is able to fit on it's own line, if not, fall back to Glyph wrapping.
                             || (wrap == Wrap::WordOrGlyph && word_width > width_opt.unwrap_or(f32::INFINITY))
+                            // If we're on the first line and can't fit the word on its own
+                            || (wrap == Wrap::WordOrGlyph && on_first_line && !word_fits_on_current_line)
                         {
                             // Commit the current line so that the word starts on the next line.
                             if word_range_width > 0.
-                                && wrap == Wrap::WordOrGlyph
-                                && word_width > width_opt.unwrap_or(f32::INFINITY)
+                                && ((wrap == Wrap::WordOrGlyph
+                                    && word_width > width_opt.unwrap_or(f32::INFINITY))
+                                    || (wrap == Wrap::WordOrGlyph
+                                        && on_first_line
+                                        && !word_fits_on_current_line))
                             {
                                 add_to_visual_line(
                                     &mut current_visual_line,
@@ -1383,7 +1416,6 @@ impl ShapeLine {
                             }
                         } else {
                             // Wrap::Word, Wrap::WordOrGlyph
-
                             // If we had a previous range, commit that line before the next word.
                             if word_range_width > 0. {
                                 // Current word causing a wrap is not whitespace, so we ignore the
@@ -1468,9 +1500,19 @@ impl ShapeLine {
 
         let number_of_visual_lines = visual_lines.len();
         for (index, visual_line) in visual_lines.iter().enumerate() {
+            // This empty line check accounts for the case in which a word can't fit on the first
+            // line with an indent, but could otherwise fit on a full line by itself.
             if visual_line.ranges.is_empty() {
+                layout_lines.push(LayoutLine {
+                    w: 0.0,
+                    max_ascent: 0.0,
+                    max_descent: 0.0,
+                    line_height_opt: None,
+                    glyphs: Default::default(),
+                });
                 continue;
             }
+            let first_line = index == 0;
             let new_order = self.reorder(&visual_line.ranges);
             let mut glyphs = cached_glyph_sets
                 .pop()
@@ -1509,13 +1551,18 @@ impl ShapeLine {
             // (also some spaces aren't followed by potential linebreaks but they could
             //  still be expanded)
 
+            let current_line_width = if first_line {
+                line_width - first_line_indent
+            } else {
+                line_width
+            };
             // Amount of extra width added to each blank space within a line.
             let justification_expansion = if matches!(align, Align::Justified)
                 && visual_line.spaces > 0
                 // Don't justify the last line in a paragraph.
                 && index != number_of_visual_lines - 1
             {
-                (line_width - visual_line.w) / visual_line.spaces as f32
+                (current_line_width - visual_line.w) / visual_line.spaces as f32
             } else {
                 0.
             };
@@ -1608,15 +1655,17 @@ impl ShapeLine {
                     };
                 }
             }
-
-            layout_lines.push(LayoutLine {
-                w: if align != Align::Justified {
-                    visual_line.w
-                } else if self.rtl {
+            let current_line_width = if align != Align::Justified {
+                visual_line.w - if first_line { first_line_indent } else { 0. }
+            } else {
+                if self.rtl {
                     start_x - x
                 } else {
                     x
-                },
+                }
+            };
+            layout_lines.push(LayoutLine {
+                w: current_line_width,
                 max_ascent,
                 max_descent,
                 line_height_opt,
