@@ -9,7 +9,7 @@ pub fn common_fallback() -> &'static [&'static str] {
 
 // Fallbacks to never use
 pub fn forbidden_fallback() -> &'static [&'static str] {
-    &[]
+    &["PasswordCircle"]
 }
 
 // Fallbacks to use per script
