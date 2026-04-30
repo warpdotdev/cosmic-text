@@ -52,15 +52,28 @@ fn swash_image(
         Format::Alpha
     };
 
-    // Select our source order
-    Render::new(&[
-        // Color outline with the first palette
+    // The default source list looks up color outlines first (COLR), then
+    // color bitmaps (CBDT or sbix), and finally falls back to the scalable
+    // outline. Callers that know they want a monochrome outline glyph and
+    // never the color path can request OUTLINE_ONLY to skip the color
+    // sources, which both avoids accidentally picking up a colored result
+    // when a font carries both color and outline data for a glyph (some
+    // emoji-augmented fonts do) and matches what gpui's text rendering
+    // does for its monochrome path.
+    let outline_only = cache_key.flags.contains(CacheKeyFlags::OUTLINE_ONLY);
+    let full_sources: [Source; 3] = [
         Source::ColorOutline(0),
-        // Color bitmap with best fit selection mode
         Source::ColorBitmap(StrikeWith::BestFit),
-        // Standard scalable outline
         Source::Outline,
-    ])
+    ];
+    let outline_sources: [Source; 1] = [Source::Outline];
+    let sources: &[Source] = if outline_only {
+        &outline_sources
+    } else {
+        &full_sources
+    };
+
+    Render::new(sources)
     .format(format)
     // Apply the fractional offset
     .offset(offset)
