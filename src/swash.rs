@@ -36,6 +36,22 @@ fn swash_image(
     // in a real renderer
     let offset = Vector::new(cache_key.x_bin.as_float(), cache_key.y_bin.as_float());
 
+    // The output format selects between grayscale alpha coverage
+    // (Format::Alpha) and three-channel subpixel coverage. Subpixel
+    // output is opt-in via CacheKeyFlags::SUBPIXEL_BGRA and is intended
+    // to be composited with dual-source blending so each LCD subpixel
+    // can be weighted independently. We use subpixel_bgra() rather than
+    // bare Subpixel because it applies a 3-tap LCD filter tuned for the
+    // BGR component layout swash produces, matching what consumers like
+    // gpui's wgpu backend expect. Color glyphs (emoji) are unaffected:
+    // the ColorOutline and ColorBitmap sources produce RGBA color
+    // regardless of the requested format.
+    let format = if cache_key.flags.contains(CacheKeyFlags::SUBPIXEL_BGRA) {
+        Format::subpixel_bgra()
+    } else {
+        Format::Alpha
+    };
+
     // Select our source order
     Render::new(&[
         // Color outline with the first palette
@@ -45,8 +61,7 @@ fn swash_image(
         // Standard scalable outline
         Source::Outline,
     ])
-    // Select a subpixel format
-    .format(Format::Alpha)
+    .format(format)
     // Apply the fractional offset
     .offset(offset)
     .transform(if cache_key.flags.contains(CacheKeyFlags::FAKE_ITALIC) {

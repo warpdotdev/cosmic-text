@@ -7,6 +7,11 @@ bitflags::bitflags! {
     pub struct CacheKeyFlags: u32 {
         /// Skew by 14 degrees to synthesize italic
         const FAKE_ITALIC = 1;
+        /// Render the glyph in subpixel BGRA format instead of grayscale
+        /// alpha. Each output texel encodes per-LCD-subpixel coverage
+        /// (one channel per subpixel) and is intended for compositing
+        /// through dual-source blending. Has no effect on color glyphs.
+        const SUBPIXEL_BGRA = 2;
     }
 }
 
