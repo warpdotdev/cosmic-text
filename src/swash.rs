@@ -36,17 +36,45 @@ fn swash_image(
     // in a real renderer
     let offset = Vector::new(cache_key.x_bin.as_float(), cache_key.y_bin.as_float());
 
-    // Select our source order
-    Render::new(&[
-        // Color outline with the first palette
+    // The output format selects between grayscale alpha coverage
+    // (Format::Alpha) and three-channel subpixel coverage. Subpixel
+    // output is opt-in via CacheKeyFlags::SUBPIXEL_BGRA and is intended
+    // to be composited with dual-source blending so each LCD subpixel
+    // can be weighted independently. We use subpixel_bgra() rather than
+    // bare Subpixel because it applies a 3-tap LCD filter tuned for the
+    // BGR component layout swash produces, matching what consumers like
+    // gpui's wgpu backend expect. Color glyphs (emoji) are unaffected:
+    // the ColorOutline and ColorBitmap sources produce RGBA color
+    // regardless of the requested format.
+    let format = if cache_key.flags.contains(CacheKeyFlags::SUBPIXEL_BGRA) {
+        Format::subpixel_bgra()
+    } else {
+        Format::Alpha
+    };
+
+    // The default source list looks up color outlines first (COLR), then
+    // color bitmaps (CBDT or sbix), and finally falls back to the scalable
+    // outline. Callers that know they want a monochrome outline glyph and
+    // never the color path can request OUTLINE_ONLY to skip the color
+    // sources, which both avoids accidentally picking up a colored result
+    // when a font carries both color and outline data for a glyph (some
+    // emoji-augmented fonts do) and matches what gpui's text rendering
+    // does for its monochrome path.
+    let outline_only = cache_key.flags.contains(CacheKeyFlags::OUTLINE_ONLY);
+    let full_sources: [Source; 3] = [
         Source::ColorOutline(0),
-        // Color bitmap with best fit selection mode
         Source::ColorBitmap(StrikeWith::BestFit),
-        // Standard scalable outline
         Source::Outline,
-    ])
-    // Select a subpixel format
-    .format(Format::Alpha)
+    ];
+    let outline_sources: [Source; 1] = [Source::Outline];
+    let sources: &[Source] = if outline_only {
+        &outline_sources
+    } else {
+        &full_sources
+    };
+
+    Render::new(sources)
+    .format(format)
     // Apply the fractional offset
     .offset(offset)
     .transform(if cache_key.flags.contains(CacheKeyFlags::FAKE_ITALIC) {

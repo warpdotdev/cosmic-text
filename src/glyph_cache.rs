@@ -7,6 +7,18 @@ bitflags::bitflags! {
     pub struct CacheKeyFlags: u32 {
         /// Skew by 14 degrees to synthesize italic
         const FAKE_ITALIC = 1;
+        /// Render the glyph in subpixel BGRA format instead of grayscale
+        /// alpha. Each output texel encodes per-LCD-subpixel coverage
+        /// (one channel per subpixel) and is intended for compositing
+        /// through dual-source blending. Has no effect on color glyphs.
+        const SUBPIXEL_BGRA = 2;
+        /// Restrict the renderer source list to Source::Outline, skipping
+        /// the color outline (COLR) and color bitmap (CBDT/sbix) sources.
+        /// Callers set this when they know the glyph is supposed to be a
+        /// monochrome outline; for fonts that carry both color and outline
+        /// data for the same glyph, this avoids picking up an unintended
+        /// color result that the caller cannot composite as coverage.
+        const OUTLINE_ONLY = 4;
     }
 }
 
