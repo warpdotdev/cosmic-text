@@ -17,6 +17,9 @@ jobs:
     - uses: EmbarkStudios/cargo-deny-action@v2
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read # actions/checkout needs to read the repo
+      checks: write # actions-rs/clippy-check publishes clippy results as a check run
     steps:
     - uses: actions/checkout@v3
       with:
